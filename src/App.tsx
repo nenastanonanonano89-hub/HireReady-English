@@ -17,6 +17,7 @@ import { auth, signInWithGoogle, logOut, db } from './firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { GoogleGenAI, Type } from "@google/genai";
+import { Analytics } from '@vercel/analytics/react';
 
 enum OperationType {
   CREATE = 'create',
@@ -1375,6 +1376,7 @@ Speak clearly, slowly, and at a pace suitable for a ${englishLevel} English lear
           )}
         </AnimatePresence>
       </main>
+      <Analytics />
     </div>
   );
 }
