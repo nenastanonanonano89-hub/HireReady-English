@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Mic, MicOff, Settings, Play, Square, Loader2, User, MessageSquare, ThumbsUp, ThumbsDown, LogIn, LogOut, Check, Volume2, Star, Flame, Trophy, Award, BookOpen, Headphones, Briefcase, Lock, Brain, CheckCircle, RefreshCw, ArrowRight } from 'lucide-react';
+import { Mic, MicOff, Settings, Play, Square, Loader2, User, MessageSquare, ThumbsUp, ThumbsDown, LogIn, LogOut, Check, Volume2, Star, Flame, Trophy, Award, BookOpen, Headphones, Briefcase, Lock, Brain, CheckCircle, RefreshCw, ArrowRight, MessageCircle, HelpCircle, Book, BarChart3 } from 'lucide-react';
 import { useLiveAPI } from './hooks/useLiveAPI';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -106,7 +106,7 @@ interface BadgeItem {
 export default function App() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [ratedMessages, setRatedMessages] = useState<Record<string, 'up' | 'down'>>({});
-  const [mode, setMode] = useState<'selection' | 'setup' | 'interview' | 'summary'>('selection');
+  const [mode, setMode] = useState<'landing' | 'selection' | 'setup' | 'interview' | 'summary' | 'lessons' | 'stats'>('landing');
   const [jobTitle, setJobTitle] = useState('Customer Service Representative');
   const [interviewType, setInterviewType] = useState('Call Center');
   const [englishLevel, setEnglishLevel] = useState('Beginner');
@@ -137,6 +137,13 @@ export default function App() {
     { id: 2, name: 'Conversations', nameAr: 'محادثات', type: 'Conversation', color: 'bg-blue-500', minXp: 100, maxXp: 300, icon: MessageSquare, desc: 'Practice daily English conversations.', descAr: 'تدرب على المحادثات اليومية' },
     { id: 3, name: 'Customer Service', nameAr: 'خدمة العملاء', type: 'Customer Service', color: 'bg-yellow-500', minXp: 300, maxXp: 600, icon: Headphones, desc: 'Train for support and call center roles.', descAr: 'تدرب على أدوار الدعم الفني والكول سنتر' },
     { id: 4, name: 'Interview', nameAr: 'مقابلة عمل', type: 'Interview', color: 'bg-red-500', minXp: 600, maxXp: 1000, icon: Briefcase, desc: 'Mock interviews for your target job.', descAr: 'مقابلات وهمية لوظيفتك المستهدفة' },
+  ];
+
+  const LESSONS = [
+    { id: 1, title: 'Greetings & Introductions', titleAr: 'التحيات والتعريف بالنفس', level: 'Beginner', xp: 50, icon: MessageCircle, content: 'Learn how to say hello and introduce yourself in a professional way.' },
+    { id: 2, title: 'Common Interview Questions', titleAr: 'أسئلة المقابلة الشائعة', level: 'Intermediate', xp: 100, icon: HelpCircle, content: 'Master the most frequent questions like "Tell me about yourself".' },
+    { id: 3, title: 'Customer Service Phrases', titleAr: 'عبارات خدمة العملاء', level: 'Beginner', xp: 75, icon: Headphones, content: 'Essential phrases for handling customers politely and effectively.' },
+    { id: 4, title: 'Grammar: Past Tense', titleAr: 'القواعد: الزمن الماضي', level: 'Beginner', xp: 60, icon: Book, content: 'How to talk about your past experience correctly.' },
   ];
 
   useEffect(() => {
@@ -337,14 +344,20 @@ Speak clearly, slowly, and at a pace suitable for a ${englishLevel} English lear
     }
   };
 
-  const speakWord = (word: string) => {
-    if ('speechSynthesis' in window && word) {
+  const speakText = (text: string, rate: number = 1) => {
+    if ('speechSynthesis' in window && text) {
       window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(word);
+      // Remove Arabic text for better TTS quality
+      const englishOnly = text.replace(/[\u0600-\u06FF]/g, '').trim();
+      const utterance = new SpeechSynthesisUtterance(englishOnly);
       utterance.lang = 'en-US';
-      utterance.rate = 0.7; // Slightly slower for clarity
+      utterance.rate = rate;
       window.speechSynthesis.speak(utterance);
     }
+  };
+
+  const speakWord = (word: string) => {
+    speakText(word, 0.7);
   };
 
   const handleStart = () => {
@@ -384,6 +397,16 @@ Speak clearly, slowly, and at a pace suitable for a ${englishLevel} English lear
           <h1 className="text-2xl font-heading font-bold tracking-tight text-brand-blue">HireReady English</h1>
         </div>
         <div className="flex items-center gap-4">
+          {user && (
+            <div className="hidden md:flex items-center gap-2 mr-4">
+              <Button variant="ghost" size="sm" onClick={() => setMode('stats')} className="text-slate-600 hover:text-brand-blue">
+                <BarChart3 className="w-4 h-4 mr-1" /> Stats
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setMode('lessons')} className="text-slate-600 hover:text-brand-green">
+                <BookOpen className="w-4 h-4 mr-1" /> Lessons
+              </Button>
+            </div>
+          )}
           {mode === 'interview' && (
             <Badge className="bg-brand-green hover:bg-brand-green/90 text-white animate-in fade-in">
               {isConnected ? 'Live' : 'Connecting...'}
@@ -400,9 +423,296 @@ Speak clearly, slowly, and at a pace suitable for a ${englishLevel} English lear
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto p-6 pt-12">
+      <main className={mode === 'landing' ? "w-full" : "max-w-4xl mx-auto p-6 pt-12"}>
         <AnimatePresence mode="wait">
-          {mode === 'selection' ? (
+          {mode === 'landing' ? (
+            <motion.div
+              key="landing"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center"
+            >
+              {/* Hero Section */}
+              <section className="w-full bg-brand-blue text-white py-20 px-6 relative overflow-hidden">
+                <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_50%_50%,_#00C897_0%,_transparent_70%)]"></div>
+                <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12 relative z-10">
+                  <div className="flex-1 text-center md:text-left">
+                    <motion.h2 
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 }}
+                      className="text-5xl md:text-7xl font-heading font-extrabold tracking-tight mb-6 leading-tight"
+                    >
+                      Master English.<br/>
+                      <span className="text-brand-green">Get Hired.</span>
+                    </motion.h2>
+                    <motion.p 
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 }}
+                      className="text-xl text-slate-300 mb-8 max-w-xl"
+                    >
+                      The AI-powered interview coach designed for non-native speakers. Practice real-world scenarios and get instant feedback.
+                    </motion.p>
+                    <motion.div 
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4 }}
+                      className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start"
+                    >
+                      <Button 
+                        size="lg" 
+                        onClick={() => setMode('selection')}
+                        className="bg-brand-green hover:bg-brand-green/90 text-white text-lg px-8 py-6 rounded-2xl font-bold shadow-lg shadow-brand-green/20"
+                      >
+                        Start Challenge (ابدأ التحدي)
+                      </Button>
+                      <Button 
+                        size="lg" 
+                        variant="outline" 
+                        className="border-white/20 text-white hover:bg-white/10 text-lg px-8 py-6 rounded-2xl font-bold"
+                      >
+                        Learn More (اعرف المزيد)
+                      </Button>
+                    </motion.div>
+                  </div>
+                  <div className="flex-1 relative">
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.8, rotate: -5 }}
+                      animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                      transition={{ delay: 0.5, type: 'spring' }}
+                      className="bg-white/10 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/10 shadow-2xl relative"
+                    >
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="w-12 h-12 rounded-full bg-brand-green flex items-center justify-center">
+                          <User className="text-white w-6 h-6" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-white">AI Interviewer</p>
+                          <p className="text-xs text-slate-400">Online & Ready</p>
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                          <p className="text-sm text-slate-300">"Tell me about a time you handled a difficult customer..."</p>
+                        </div>
+                        <div className="bg-brand-green/20 p-4 rounded-2xl border border-brand-green/20 ml-8">
+                          <p className="text-sm text-white">"I once had a customer who was very frustrated with..."</p>
+                        </div>
+                      </div>
+                      <div className="mt-8 flex justify-center">
+                        <div className="flex gap-2">
+                          {[1, 2, 3, 4, 5].map(i => (
+                            <div key={i} className="w-1 h-8 bg-brand-green rounded-full animate-pulse" style={{ animationDelay: `${i * 0.1}s` }}></div>
+                          ))}
+                        </div>
+                      </div>
+                    </motion.div>
+                  </div>
+                </div>
+              </section>
+
+              {/* Features Section */}
+              <section className="py-24 px-6 max-w-6xl mx-auto w-full">
+                <div className="text-center mb-16">
+                  <h3 className="text-3xl md:text-4xl font-heading font-bold text-brand-blue mb-4">Why HireReady?</h3>
+                  <p className="text-slate-500 max-w-2xl mx-auto">Everything you need to go from zero to job-ready in weeks, not years.</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  {[
+                    { icon: Headphones, title: 'Real Scenarios', desc: 'Practice for Call Centers, Customer Support, and more.', color: 'text-blue-500 bg-blue-50' },
+                    { icon: Brain, title: 'AI Feedback', desc: 'Get instant grammar, vocabulary, and pronunciation tips.', color: 'text-green-500 bg-green-50' },
+                    { icon: Trophy, title: 'Gamified Growth', desc: 'Earn XP, unlock badges, and track your daily streak.', color: 'text-yellow-500 bg-yellow-50' },
+                  ].map((feature, i) => (
+                    <motion.div 
+                      key={i}
+                      whileHover={{ y: -10 }}
+                      className="p-8 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl transition-all"
+                    >
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 ${feature.color}`}>
+                        <feature.icon className="w-7 h-7" />
+                      </div>
+                      <h4 className="text-xl font-bold text-brand-blue mb-3">{feature.title}</h4>
+                      <p className="text-slate-500 leading-relaxed">{feature.desc}</p>
+                    </motion.div>
+                  ))}
+                </div>
+              </section>
+
+              {/* CTA Section */}
+              <section className="w-full bg-slate-50 py-20 px-6">
+                <div className="max-w-4xl mx-auto text-center bg-white p-12 rounded-[3rem] border border-slate-200 shadow-xl">
+                  <h3 className="text-3xl md:text-4xl font-heading font-bold text-brand-blue mb-6" dir="rtl">جاهز تبدأ رحلتك؟</h3>
+                  <p className="text-lg text-slate-500 mb-10 max-w-xl mx-auto">Join thousands of students who are already mastering English and landing their dream jobs.</p>
+                  <Button 
+                    size="lg" 
+                    onClick={() => setMode('selection')}
+                    className="bg-brand-blue hover:bg-brand-blue/90 text-white text-xl px-12 py-8 rounded-2xl font-bold shadow-xl shadow-brand-blue/20"
+                  >
+                    Get Started Now
+                  </Button>
+                </div>
+              </section>
+
+              {/* Footer */}
+              <footer className="py-12 text-center text-slate-400 text-sm">
+                <p>© 2026 HireReady English. All rights reserved.</p>
+              </footer>
+            </motion.div>
+          ) : mode === 'lessons' ? (
+            <motion.div
+              key="lessons"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="max-w-4xl mx-auto"
+            >
+              <div className="mb-8 flex items-center justify-between">
+                <div>
+                  <h2 className="text-3xl font-heading font-bold text-brand-blue mb-2">Interactive Lessons (دروس تفاعلية)</h2>
+                  <p className="text-slate-500">Master English skills step-by-step. (تعلم مهارات الإنجليزية خطوة بخطوة)</p>
+                </div>
+                <Button variant="outline" onClick={() => setMode('selection')}>Back to Dashboard</Button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {LESSONS.map((lesson) => {
+                  const Icon = lesson.icon;
+                  return (
+                    <Card key={lesson.id} className="hover:shadow-md transition-all border-slate-200">
+                      <CardHeader className="pb-2">
+                        <div className="flex justify-between items-start">
+                          <div className="w-12 h-12 rounded-xl bg-brand-green/10 flex items-center justify-center text-brand-green">
+                            <Icon className="w-6 h-6" />
+                          </div>
+                          <Badge variant="secondary" className="bg-slate-100 text-slate-600 border-none">{lesson.level}</Badge>
+                        </div>
+                        <CardTitle className="text-xl font-bold text-brand-blue mt-4">
+                          {lesson.title}<br/>
+                          <span className="text-sm font-normal opacity-70" dir="rtl">{lesson.titleAr}</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-slate-600 mb-6">{lesson.content}</p>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1 text-yellow-500 font-bold">
+                            <Star className="w-4 h-4 fill-current" />
+                            <span>+{lesson.xp} XP</span>
+                          </div>
+                          <Button className="bg-brand-blue hover:bg-brand-blue/90 text-white">Start Lesson</Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </motion.div>
+          ) : mode === 'stats' ? (
+            <motion.div
+              key="stats"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="max-w-4xl mx-auto"
+            >
+              <div className="mb-8 flex items-center justify-between">
+                <div>
+                  <h2 className="text-3xl font-heading font-bold text-brand-blue mb-2">Your Progress (إحصائياتك)</h2>
+                  <p className="text-slate-500">Track your English journey. (تتبع رحلتك التعليمية)</p>
+                </div>
+                <Button variant="outline" onClick={() => setMode('selection')}>Back to Dashboard</Button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+                {[
+                  { label: 'Total XP', value: xp, icon: Star, color: 'text-yellow-500' },
+                  { label: 'Day Streak', value: streak, icon: Flame, color: 'text-orange-500' },
+                  { label: 'Sessions', value: '12', icon: MessageSquare, color: 'text-blue-500' },
+                  { label: 'Badges', value: unlockedBadges.length, icon: Trophy, color: 'text-purple-500' },
+                ].map((stat, i) => (
+                  <Card key={i} className="border-slate-200">
+                    <CardContent className="p-6 flex flex-col items-center text-center">
+                      <stat.icon className={`w-8 h-8 ${stat.color} mb-2`} />
+                      <p className="text-3xl font-bold text-brand-blue">{stat.value}</p>
+                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{stat.label}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              <Card className="border-slate-200 mb-10">
+                <CardHeader>
+                  <CardTitle className="text-xl font-bold text-brand-blue">Weekly Activity</CardTitle>
+                </CardHeader>
+                <CardContent className="h-64 flex items-end justify-between gap-2 pt-10">
+                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => {
+                    const height = [20, 45, 30, 80, 50, 20, 10][i];
+                    return (
+                      <div key={day} className="flex-1 flex flex-col items-center gap-2">
+                        <div 
+                          className={`w-full rounded-t-lg transition-all duration-1000 ${i === 3 ? 'bg-brand-green' : 'bg-slate-200'}`}
+                          style={{ height: `${height}%` }}
+                        ></div>
+                        <span className="text-xs font-bold text-slate-400">{day}</span>
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <Card className="border-slate-200">
+                  <CardHeader>
+                    <CardTitle className="text-xl font-bold text-brand-blue">Skill Breakdown</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {[
+                      { skill: 'Pronunciation', level: 75 },
+                      { skill: 'Grammar', level: 60 },
+                      { skill: 'Vocabulary', level: 85 },
+                      { skill: 'Fluency', level: 40 },
+                    ].map((skill) => (
+                      <div key={skill.skill} className="space-y-2">
+                        <div className="flex justify-between text-sm font-bold">
+                          <span>{skill.skill}</span>
+                          <span>{skill.level}%</span>
+                        </div>
+                        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-brand-blue rounded-full" 
+                            style={{ width: `${skill.level}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+                <Card className="border-slate-200">
+                  <CardHeader>
+                    <CardTitle className="text-xl font-bold text-brand-blue">Recent Achievements</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {unlockedBadges.slice(0, 3).map(badgeId => {
+                      const badge = BADGES.find(b => b.id === badgeId);
+                      if (!badge) return null;
+                      return (
+                        <div key={badgeId} className="flex items-center gap-4 p-3 rounded-xl bg-slate-50 border border-slate-100">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${badge.color}`}>
+                            <badge.icon className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-sm text-brand-blue">{badge.name}</p>
+                            <p className="text-xs text-slate-500">{badge.description}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </CardContent>
+                </Card>
+              </div>
+            </motion.div>
+          ) : mode === 'selection' ? (
             <motion.div
               key="selection"
               initial={{ opacity: 0, y: 20 }}
@@ -784,23 +1094,33 @@ Speak clearly, slowly, and at a pace suitable for a ${englishLevel} English lear
                               </span>
                             ))}
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-slate-500 mr-2">Rate this response:</span>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-slate-500 mr-2">Rate this response:</span>
+                              <Button 
+                                variant={ratedMessages[msg.id] === 'up' ? 'default' : 'outline'} 
+                                size="sm" 
+                                className="h-8 px-3"
+                                onClick={() => handleRate(msg.id, msg.text, 'up')}
+                              >
+                                <ThumbsUp className="w-3 h-3 mr-1" /> Helpful
+                              </Button>
+                              <Button 
+                                variant={ratedMessages[msg.id] === 'down' ? 'destructive' : 'outline'} 
+                                size="sm" 
+                                className="h-8 px-3"
+                                onClick={() => handleRate(msg.id, msg.text, 'down')}
+                              >
+                                <ThumbsDown className="w-3 h-3 mr-1" /> Not Helpful
+                              </Button>
+                            </div>
                             <Button 
-                              variant={ratedMessages[msg.id] === 'up' ? 'default' : 'outline'} 
+                              variant="outline" 
                               size="sm" 
-                              className="h-8 px-3"
-                              onClick={() => handleRate(msg.id, msg.text, 'up')}
+                              className="h-8 text-xs border-brand-blue/20 text-brand-blue hover:bg-brand-blue/5"
+                              onClick={() => speakText(msg.text)}
                             >
-                              <ThumbsUp className="w-3 h-3 mr-1" /> Helpful
-                            </Button>
-                            <Button 
-                              variant={ratedMessages[msg.id] === 'down' ? 'destructive' : 'outline'} 
-                              size="sm" 
-                              className="h-8 px-3"
-                              onClick={() => handleRate(msg.id, msg.text, 'down')}
-                            >
-                              <ThumbsDown className="w-3 h-3 mr-1" /> Not Helpful
+                              <Volume2 className="w-3 h-3 mr-1" /> Listen (استمع)
                             </Button>
                           </div>
                         </div>
