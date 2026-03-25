@@ -1,0 +1,7 @@
+{
+  "name": "HireReady English",
+  "description": "An AI-powered interview preparation app for non-native English speakers.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

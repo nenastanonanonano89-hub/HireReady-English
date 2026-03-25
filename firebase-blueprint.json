@@ -1,0 +1,46 @@
+{
+  "entities": {
+    "Feedback": {
+      "title": "Feedback",
+      "description": "User feedback on AI responses during the interview.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who provided the feedback."
+        },
+        "aiResponse": {
+          "type": "string",
+          "description": "The AI's response text that is being rated."
+        },
+        "rating": {
+          "type": "string",
+          "enum": ["up", "down"],
+          "description": "The user's rating (thumbs up or thumbs down)."
+        },
+        "jobTitle": {
+          "type": "string"
+        },
+        "interviewType": {
+          "type": "string"
+        },
+        "englishLevel": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "description": "When the feedback was submitted."
+        }
+      },
+      "required": ["userId", "aiResponse", "rating", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/feedback/{feedbackId}": {
+      "schema": {
+        "$ref": "#/entities/Feedback"
+      },
+      "description": "Stores all feedback ratings."
+    }
+  }
+}
